@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinguaFlow — AI Translation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <!-- Animated background orbs -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+
+  <header class="header">
+    <div class="logo">
+      <span class="logo-icon">⬡</span>
+      <span class="logo-text">LinguaFlow</span>
+    </div>
+    <p class="tagline">Translate across 100+ languages instantly</p>
+  </header>
+
+  <main class="container">
+
+    <!-- Language selector bar -->
+    <div class="lang-bar">
+      <div class="lang-select-wrap">
+        <label class="lang-label">FROM</label>
+        <select id="sourceLang" class="lang-select">
+          {% for code, name in languages.items() %}
+            <option value="{{ code }}" {% if code == 'auto' %}selected{% endif %}>{{ name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button class="swap-btn" id="swapBtn" title="Swap languages">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/>
+        </svg>
+      </button>
+
+      <div class="lang-select-wrap">
+        <label class="lang-label">TO</label>
+        <select id="targetLang" class="lang-select">
+          {% for code, name in languages.items() %}
+            {% if code != 'auto' %}
+              <option value="{{ code }}" {% if code == 'ur' %}selected{% endif %}>{{ name }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <!-- Translation panels -->
+    <div class="panels">
+
+      <!-- Input panel -->
+      <div class="panel panel-input">
+        <div class="panel-header">
+          <span class="panel-title">Source Text</span>
+          <span class="char-count" id="charCount">0 / 5000</span>
+        </div>
+        <textarea
+          id="inputText"
+          class="text-area"
+          placeholder="Type or paste text here..."
+          maxlength="5000"
+          spellcheck="true"
+        ></textarea>
+        <div class="panel-actions">
+          <button class="action-btn" id="clearBtn" title="Clear text">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            Clear
+          </button>
+          <button class="action-btn" id="pasteBtn" title="Paste from clipboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M17 4h1a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h1"/></svg>
+            Paste
+          </button>
+          <button class="action-btn tts-btn" id="ttsInputBtn" title="Listen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
+            Listen
+          </button>
+        </div>
+      </div>
+
+      <!-- Translate button (center) -->
+      <div class="translate-center">
+        <button class="translate-btn" id="translateBtn">
+          <span class="btn-text">Translate</span>
+          <span class="btn-arrow">→</span>
+          <div class="btn-loader" id="btnLoader"></div>
+        </button>
+      </div>
+
+      <!-- Output panel -->
+      <div class="panel panel-output">
+        <div class="panel-header">
+          <span class="panel-title">Translation</span>
+          <span class="translated-lang" id="translatedLangBadge"></span>
+        </div>
+        <div class="output-area" id="outputArea">
+          <span class="placeholder-hint">Your translation will appear here...</span>
+        </div>
+        <div class="panel-actions">
+          <button class="action-btn" id="copyBtn" title="Copy translation" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            Copy
+          </button>
+          <button class="action-btn tts-btn" id="ttsOutputBtn" title="Listen" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
+            Listen
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Error message -->
+    <div class="error-bar" id="errorBar" style="display:none;"></div>
+
+    <!-- History section -->
+    <section class="history-section" id="historySection" style="display:none;">
+      <div class="history-header">
+        <h2 class="history-title">Recent Translations</h2>
+        <button class="clear-history-btn" id="clearHistoryBtn">Clear All</button>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>Built with FastAPI + deep-translator &nbsp;·&nbsp; CodeAlpha Internship — Task 1</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
